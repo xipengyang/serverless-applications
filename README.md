@@ -23,3 +23,4 @@ A collection of case studies covering components, features, approaches of develo
     Scaling for reads: Caching, Replica
     
     Scaling for writes: Sharding
+
