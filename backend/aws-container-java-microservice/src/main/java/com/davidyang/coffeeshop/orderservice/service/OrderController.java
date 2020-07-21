@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * @author xipengyang
  */
-@RequestMapping("/")
+@RequestMapping("/orders")
 @RestController
 @Slf4j
 public class OrderController {
