@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM template that is using fargate
+
+Parameters:
+  NetworkStackNameParameter:
+    Type: String
+    Description: Enter network stack name
+
+Resources:
+  SecurityGroupELBIngress:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Limits security group ingress and egress traffic for the ECS tasks running in AWS Fargate
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetworkStackNameParameter}-VPC"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  EcsSecurityGroupALBports:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'SecurityGroupELBIngress'
+      IpProtocol: tcp
+      FromPort: '0'
+      ToPort: '61000'
+      SourceSecurityGroupId: !Ref 'SecurityGroupELBIngress'
+
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "backend-service-cluster-${AWS::StackName}"
+
+  ECSServiceCloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: ecs/coffee-shop/ecs/
+      RetentionInDays: 1
+
+  CustomerOrderServiceECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: customer-order-service-task
+      Cpu: 512
+      Memory: 1024
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      ContainerDefinitions:
+        - Name: customer-order-service-task
+          Cpu: 512
+          Memory: 1024
+          Image: !Sub '632135638629.dkr.ecr.ap-southeast-2.amazonaws.com/coffeeshop/order-service:latest'
+          Environment:
+            - Name: SERVICE_NAME
+              Value: order-service
+          PortMappings:
+            - ContainerPort: 8080
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ECSServiceCloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: order-service
+
+  # ALB added to facade the containers for back end services
+  CustomerOrderLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "elb-${AWS::StackName}"
+      Subnets:
+        - Fn::ImportValue:
+            Fn::Sub: "${NetworkStackNameParameter}-PublicSubnet1"
+        - Fn::ImportValue:
+            Fn::Sub: "${NetworkStackNameParameter}-PublicSubnet2"
+      SecurityGroups:
+        - !Ref SecurityGroupELBIngress
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  CustomerOrderLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref CustomerOrderLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref CustomerOrderTargetGroup
+
+  CustomerOrderTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: "${NetworkStackNameParameter}-VPC"
+      Port: 8080
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+
+  CustomerOrderServiceECSService:
+    Type: AWS::ECS::Service
+    DependsOn: CustomerOrderLoadBalancer
+    Properties:
+      ServiceName: customer-order-service
+      Cluster: !Ref ECSCluster
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref SecurityGroupELBIngress
+          Subnets:
+            - Fn::ImportValue:
+                Fn::Sub: "${NetworkStackNameParameter}-PublicSubnet1"
+            - Fn::ImportValue:
+                Fn::Sub: "${NetworkStackNameParameter}-PublicSubnet2"
+      TaskDefinition: !Ref CustomerOrderServiceECSTaskDefinition
+      LoadBalancers:
+        - ContainerName: "customer-order-service-task"
+          ContainerPort: 8080
+          TargetGroupArn: !Ref CustomerOrderTargetGroup
+
+Outputs:
+
+  CustomerOrderServiceLBURL:
+    Description: "Load balancer URL for order service"
+    Value: !Sub "http://${CustomerOrderLoadBalancer.DNSName}"
