@@ -10,7 +10,8 @@ A collection of case studies covering components, features, approaches of develo
 ```
 
 
-##### Scaling #####
+
+### Scaling ###
 
     Vertical Scaling: EC2, Automatic Scaling, Spot fleet
     
