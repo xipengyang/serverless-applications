@@ -13,7 +13,7 @@ A collection of case studies covering components, features, approaches of develo
 
 ### Scaling ###
 
-    Vertical Scaling: EC2, Automatic Scaling, Spot fleet
+    Vertical Scaling: SQS, SNS, Load balancer, Cloudwatch, DynamoDB Table, Spot fleet
     
     Horizontal Scaling: Docker, Kubernetes, ECS, EKS, Fargate, Lambda
 
@@ -24,4 +24,15 @@ A collection of case studies covering components, features, approaches of develo
     Scaling for reads: Caching, Replica
     
     Scaling for writes: Sharding
+    
+    
+### Parallelism ###
+
+    Independent process
+    Failure Isolation
+    Atomic
+    Non-compliant
+    Limitations: Account Qutoas ( Lambda concurrency)
+    
+    Fan out : 
 
