@@ -16,7 +16,7 @@ Amazon ECS, Amazon EKS, Amazon ECR, Amazon Fargate, Lambda
 AWS has two popular approaches of building microservices: Docker container and AWS Lambda
 
 
-### container java microservice ###
+### Container java microservice ###
 
 #### Build & upload the Docker image to Amazon ECR ####
 
@@ -44,5 +44,13 @@ docker run -p 8080:8080 --rm coffeeshop/order-service
 
 cucumber-java in used to define the expectation of a consumer on a service. 
 
+### Lambda microservice ###
 
+#### Use AWS SAM to package the application by using AWS CloudFormation ####
 
+```bash
+aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
+```
+
+#### Saving resources names to SSM ####
+SSM parameters allow you to share application resource attributes across stack templates and within your Lambda function code. You should prefer SSM parameter Store over Lambda Env variable if you intend to share config values across functions or to implement find-grained access to sensitive data.  

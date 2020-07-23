@@ -1,0 +1,6 @@
+{
+  "stripe": {
+    "test_sk": "sk_test_XXXXXXXXXXXXXXXXXXXXXXXX",
+    "live_sk": "sk_live_XXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}

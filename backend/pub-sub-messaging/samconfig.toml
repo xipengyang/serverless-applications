@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "pub-sub-messaging"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-qd51n5t275i2"
+s3_prefix = "pub-sub-messaging"
+region = "ap-southeast-2"
+capabilities = "CAPABILITY_IAM"
+

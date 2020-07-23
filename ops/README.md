@@ -1,7 +1,7 @@
 ## Operations ##
 
-#### Setup infrastructure in a separate stack ####
-Infrastructure like VPC, subnets are setup in a separate stack from the backend services infrastructure. This keeps deployment of infrastructure decoupled from deployment of backend services. 
+#### Setup network infrastructure in a separate stack ####
+Network Infrastructure like VPC, subnets are setup in a separate stack from the backend services infrastructure. This keeps deployment of infrastructure decoupled from deployment of backend services. 
 
 Create a cloudformation stack
 ```bash
@@ -15,4 +15,15 @@ aws cloudformation describe-stacks \
     --query 'Stacks[].Outputs[?OutputKey==`StackVPC`]' \
     --output table
 ```
+
+#### Sharing cross stack resource attributes ####
+AWS provides a number of tools for referencing resource attributes within templates or services.
+
+Attributes can be exported to the other templates via template outputs. Lambda environment variables can be used to pass resource attributes to the function.
+
+SSM parameter stores can be used to share common resources across a specific application.
+
+Cloud Map allows you to register any application resources, such as databases, queues, microservices, and other cloud resources, with custom names.
+
+AWS also supports other third party key value stores such as Consul, Zookeeper etc.
 

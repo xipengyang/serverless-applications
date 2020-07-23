@@ -1,6 +1,0 @@
-{
-  "stripe": {
-    "test": "sk_test_XXXXXXXXXXXXXXXXXXXXXXXX",
-    "live": "sk_live_XXXXXXXXXXXXXXXXXXXXXXXX"
-  }
-}

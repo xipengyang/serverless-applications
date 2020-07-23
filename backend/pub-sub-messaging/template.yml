@@ -11,8 +11,38 @@ Globals:
 
 Resources:
 
+  CustomerPaymentRequestTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: CustomerPaymentRequestTopic
+
   CustomerPaymentServiceQueue:
     Type: AWS::SQS::Queue
+
+  CustomerPaymentServiceQueueToCustomerPaymentRequestTopicSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt CustomerPaymentServiceQueue.Arn
+      Protocol: sqs
+      RawMessageDelivery: true
+      TopicArn: !Ref CustomerPaymentRequestTopic
+
+  CustomerPaymentServiceQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref CustomerPaymentServiceQueue
+      PolicyDocument:
+        Statement:
+          Effect: Allow
+          Principal: '*'
+          Action: sqs:SendMessage
+          Resource: '*'
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref CustomerPaymentRequestTopic
+
+
 
   # This is the Lambda function definition associated with the source code: paymentService.js. For all available properties, see
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -20,15 +50,62 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: nodejs12.x
-      Handler: ../aws-lambda-node-microservice/payment-proxy-service/src/handlers/paymentService.handler
+      Handler: src/handlers/paymentService.handler
       Events:
-        CustomerPaymentJobQueue:
+        StripePaymentFunctionJobQueue:
           Type: SQS
           Properties:
-            Queue: Fn::GetAtt CustomerPaymentServiceQueue.Arn
+            Queue: !GetAtt CustomerPaymentServiceQueue.Arn
             BatchSize: 1
       MemorySize: 128
       Policies:
         - AWSLambdaBasicExecutionRole
         - SQSPollerPolicy: # https://github.com/awslabs/serverless-application-model/blob/develop/samtranslator/policy_templates_data/policy_templates.json
-            QueueName: !Ref CustomerAccountingServiceQueue
+            QueueName: !Ref CustomerPaymentServiceQueue
+
+  PaymentTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: 'paymentId'
+          AttributeType: 'S'
+      KeySchema:
+        - AttributeName: 'paymentId'
+          KeyType: 'HASH'
+      StreamSpecification:
+        StreamViewType: 'NEW_AND_OLD_IMAGES'
+      TimeToLiveSpecification:
+        AttributeName: 'ttl'
+        Enabled: true
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # Store resource to SSM
+  PaymentRequestTopicArn:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: "/payment/topic/payment-request/SNSArn"
+      Type: "String"
+      Value: !Ref CustomerPaymentRequestTopic
+      Description: "Customer Payment Request SNS Topic ARN"
+
+  PaymentStreamArn:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: "/payment/ddb-stream/payment/StreamArn"
+      Type: "String"
+      Value: !GetAtt PaymentTable.Arn
+      Description: "Customer Payment Table Dynamo DB Stream ARN"
+
+  PaymentTableName:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: "/payment/ddb/payment-table/TableName"
+      Type: "String"
+      Value: !Ref PaymentTable
+      Description: "Customer Payment Table Name"
+
