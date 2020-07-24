@@ -35,7 +35,7 @@ Mapping these contexts to our solution space on AWS.
 .
 event - EventBridge, Fanout, Queue, Streaming
 ├── payment-service - A microservice running on Lambda architecture
-├── data-store-service - JSON object stored in a S3 cache with Amazon Elasticcach redis
+├── document-store-service - Amazon S3 as the persistent store for document with an Amazon Elasticcach redis
 ├── order-process-service - A microservice. Live orders stored in Redis to enable live update retieval.
 ├── customer-manager - can a managed service like Cognito.
 ├── event-aggregator 
@@ -69,5 +69,16 @@ event - EventBridge, Fanout, Queue, Streaming
     
     Fan out : 
     
+### Caching ###
+Some applications require high frequency reads, and consistent throughput. Caching is used in order to reduce the retrieval cost and to improve performance.
+Caching layers:
+
+    Local:  Browser, Mobile Device, Desktop
+    DNS
+    Server: HTTP Cache Headers, CDN, Reverse Proxy
+    Application: Framework integrated Caching
+    Database: Database integrated caching, Caching cluster such as Redis, Amazong Dynamo DB accelerator
+    
+
 ### Events Aggregation ###
 
