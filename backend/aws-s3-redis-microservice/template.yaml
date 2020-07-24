@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  aws-s3-redis-microservice
+
+Parameters:
+  DataBucketName:
+    Type: String
+    Description: " Unique S3 bucket name to use for the app."
+  CacheSubnetID:
+    Description: 'The subnet to be used with Amazon ElastiCache'
+    Type: String
+
+Resources:
+  DataStoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/s3-redis-service.handler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 60
+      Policies:
+        S3ReadPolicy:
+          BucketName: !Ref DataBucketName
+
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DataBucketName
+
+  ElastiCacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Cache Subnet Group
+      SubnetIds:
+        - !Ref CacheSubnetID
+
+  RedisClusterSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: Redis-S3
+      GroupDescription: ElastiCache Redis Security Group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 6379
+          ToPort: 6379
+
+  RedisCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      CacheSubnetGroupName:
+        Ref: ElastiCacheSubnetGroup
+      CacheNodeType: cache.m5.xlarge
+      ClusterName: 'Redis-S3'
+      VpcSecurityGroupIds:
+        - Fn::GetAtt:
+            - RedisClusterSecurityGroup
+            - GroupId
+      Engine: redis
+      NumCacheNodes: '1'

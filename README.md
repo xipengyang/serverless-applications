@@ -11,8 +11,8 @@ A collection of case studies covering components, features, approaches of develo
 └── README.md                   <-- The instruction
 ```
 
-## Scenario Example ##
-Due to the COVID-19 lock down, our imaginary coffee shop has offered a Click & Collect service to our customer.
+## Business Scenario Example ##
+Due to the COVID-19 lock down, our hypothetical coffee shop has offered a Click & Collect service to our customer.
 
     In a sunny morning, John wakes up and wants to order a flat white. At the website, he found there is a wide variety of beverage to choose from. John placed an order for two flat white. He is asked to pay by his credit card and he gets a notification to let him know when the coffee will be ready. Later John walked into the cafe and was immediately greeted by the staff, the Barista received the coffee order which John ordered a while ago and also his details and what kind of milk does he want. John walked away with the coffee and a smile on his face. 
 
@@ -34,10 +34,10 @@ Mapping these contexts to our solution space on AWS.
 ```bash
 .
 event - EventBridge, Fanout, Queue, Streaming
-├── payment-service - A microservice running on Lambda
-├── data-store-service - JSON object stored on S3. A simple DB service providing query capability.
+├── payment-service - A microservice running on Lambda architecture
+├── data-store-service - JSON object stored in a S3 cache with Amazon Elasticcach redis
 ├── order-process-service - A microservice. Live orders stored in Redis to enable live update retieval.
-├── customer-manager - can be using managed service like Cognito.
+├── customer-manager - can a managed service like Cognito.
 ├── event-aggregator 
 ├── analytics - Using Athena data source connectors and federated query.
 ```
