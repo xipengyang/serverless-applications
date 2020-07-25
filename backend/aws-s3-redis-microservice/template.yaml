@@ -36,7 +36,7 @@ Resources:
         - !Ref CacheSubnetID
 
   RedisClusterSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
+    Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: Redis-S3
       GroupDescription: ElastiCache Redis Security Group
@@ -51,7 +51,7 @@ Resources:
     Properties:
       CacheSubnetGroupName:
         Ref: ElastiCacheSubnetGroup
-      CacheNodeType: cache.m5.xlarge
+      CacheNodeType: cache.m3.medium
       ClusterName: 'Redis-S3'
       VpcSecurityGroupIds:
         - Fn::GetAtt:
@@ -59,3 +59,5 @@ Resources:
             - GroupId
       Engine: redis
       NumCacheNodes: '1'
+
+
