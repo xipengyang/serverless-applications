@@ -75,9 +75,9 @@ Caching layers:
 
     Local:  Browser, Mobile Device, Desktop
     DNS
-    Server: HTTP Cache Headers, CDN, Reverse Proxy
-    Application: Framework integrated Caching
-    Database: Database integrated caching, Caching cluster such as Redis, Amazong Dynamo DB accelerator
+    Server: HTTP Cache Headers, CDN, API GW
+    Application: Framework integrated Caching, Lambda caching, DAX
+    VPC Resource: Database integrated caching, Elastic Cache, 
     
 
 ### Events Aggregation ###

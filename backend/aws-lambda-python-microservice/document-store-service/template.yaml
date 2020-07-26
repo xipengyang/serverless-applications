@@ -6,13 +6,13 @@ Description: >
   Sample SAM Template for aws-lambda-python-microservice
 
 Parameters:
-  NetworkStackNameParameter:
+  ParentVPCStack:
     Type: String
     Description: Enter network stack name
 
 Globals:
   Function:
-    Timeout: 20
+    Timeout: 5
 
 Resources:
 
@@ -25,17 +25,17 @@ Resources:
       GroupDescription: "Redis + Lambda on SAM Security Group"
       VpcId:
         Fn::ImportValue:
-          Fn::Sub: "${NetworkStackNameParameter}-VPC"
-      SecurityGroupEgress:
-        - CidrIp: "0.0.0.0/0"
-          FromPort: 0
-          ToPort: 65535
-          IpProtocol: tcp
-      SecurityGroupIngress:
-        - CidrIp: "0.0.0.0/0"
-          FromPort: 0
-          ToPort: 65535
-          IpProtocol: tcp
+          Fn::Sub: "${ParentVPCStack}-VPC"
+#      SecurityGroupEgress:
+#        - CidrIp: "0.0.0.0/0"
+#          FromPort: 0
+#          ToPort: 65535
+#          IpProtocol: tcp
+#      SecurityGroupIngress:
+#        - CidrIp: "0.0.0.0/0"
+#          FromPort: 0
+#          ToPort: 65535
+#          IpProtocol: tcp
 
   DocumentServiceFunction:
     Type: AWS::Serverless::Function
@@ -43,19 +43,22 @@ Resources:
       CodeUri: handlers/
       Handler: app.lambda_handler
       Runtime: python3.8
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref DataBucket
       Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
         - S3CrudPolicy:
             BucketName: !Ref DataBucket
-        - SSMParameterReadPolicy:
-            ParameterName: "/document/s3/data-bucket/S3bucket"
       VpcConfig:
         SecurityGroupIds:
           - !Ref DocumentLambdaSecurityGroup
         SubnetIds:
           - Fn::ImportValue:
-              Fn::Sub: "${NetworkStackNameParameter}-PublicSubnet1"
+              Fn::Sub: "${ParentVPCStack}-PublicSubnet1"
           - Fn::ImportValue:
-              Fn::Sub: "${NetworkStackNameParameter}-PublicSubnet2"
+              Fn::Sub: "${ParentVPCStack}-PublicSubnet2"
       Events:
         GetDocument:
           Type: Api
@@ -71,7 +74,14 @@ Resources:
       Value: !Ref DataBucket
       Description: "S3 Data Bucket Name"
 
+  EndpointS3:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      RouteTableIds: !Split [',', !Join [',', [{'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPublic'}]]]
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+
 Outputs:
-  HelloDocumentApi:
-    Description: "API Gateway endpoint URL for Prod stage for Document function"
+  DocumentStoreApi:
+    Description: "API Gateway endpoint URL for Prod stage for Document Store Service"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/document/"

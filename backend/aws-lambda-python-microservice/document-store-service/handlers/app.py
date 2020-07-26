@@ -1,20 +1,21 @@
 import json
 import boto3
+import os
 
 s3 = boto3.resource('s3')
-ssm = boto3.client('ssm')
+
+BUCKET_NAME = os.environ['BUCKET_NAME']
 
 def lambda_handler(event, context):
-
     method = event['httpMethod']
-    S3bucket = ssm.get_parameter(
-      Name='/document/s3/data-bucket/S3bucket',
-      WithDecryption=False
-    )
 
     if method == 'GET':
-        S3ObjectKey = event['queryStringParameters']
+        S3bucket=BUCKET_NAME
+        S3ObjectKey = event['queryStringParameters']['resourceKey']
         print(S3ObjectKey)
+        bucket = s3.Bucket(S3bucket)
+        for obj in bucket.objects.all():
+            print(obj.key)
         obj = s3.Object(S3bucket, S3ObjectKey)
         data = obj.get()['Body'].read().decode('utf-8')
         return {
