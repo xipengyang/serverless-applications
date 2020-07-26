@@ -37,7 +37,7 @@ Resources:
           ToPort: 65535
           IpProtocol: tcp
 
-  HelloDocumentFunction:
+  DocumentServiceFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: handlers/
@@ -46,6 +46,8 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DataBucket
+        - SSMParameterReadPolicy:
+            ParameterName: "/document/s3/data-bucket/S3bucket"
       VpcConfig:
         SecurityGroupIds:
           - !Ref DocumentLambdaSecurityGroup
